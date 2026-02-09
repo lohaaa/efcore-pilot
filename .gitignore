@@ -1,0 +1,10 @@
+node_modules/
+dist/
+docs/
+.vite/
+*.log
+
+src-tauri/target/
+src-tauri/gen/
+
+.DS_Store
