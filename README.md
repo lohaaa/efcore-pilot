@@ -1,5 +1,7 @@
 # EfCorePilot
 
+[English](./README.md) | [简体中文](./README.zh-CN.md)
+
 Cross-platform desktop tool for managing EF Core migration workflows across multiple projects.
 
 ## Tech Stack
@@ -16,6 +18,10 @@ Cross-platform desktop tool for managing EF Core migration workflows across mult
 - Environment checks (`dotnet`, `dotnet-ef`)
 - Execution history (local persistence)
 - English + Simplified Chinese switch
+
+## Planned Features (Low Priority)
+
+- Scaffold DbContext (Reverse Engineering)
 
 ## Run
 
