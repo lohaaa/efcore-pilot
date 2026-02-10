@@ -100,7 +100,8 @@ export default {
     updateDatabase: 'Update Database',
     removeMigration: 'Remove Last Migration',
     generateSqlScript: 'Generate SQL Script',
-    dropDatabase: 'Drop Database'
+    dropDatabase: 'Drop Database',
+    dropDatabaseConfirm: 'Dropping the database is dangerous. Do you want to continue?'
   },
   history: {
     title: 'History',

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useMessage } from 'naive-ui'
+import { confirm } from '@tauri-apps/plugin-dialog'
 import { useProfilesStore } from '../stores/profiles'
 import { useHistoryStore } from '../stores/history'
 import { executeEfCommand, interruptEfCommand, listenEfCommandOutput, previewEfCommand, scanWorkspace } from '../tauri-api'
@@ -739,6 +740,16 @@ async function doInterrupt() {
 async function doExecute() {
   const request = buildRequest()
   if (!request) return
+
+  if (request.commandType === 'drop-database') {
+    const confirmed = await confirm(t('command.dropDatabaseConfirm'), {
+      title: t('command.dropDatabase'),
+      kind: 'warning'
+    })
+    if (!confirmed) {
+      return
+    }
+  }
 
   const profile = selectedProfile.value
   if (profile && request.commandType === 'generate-sql-script' && request.output) {

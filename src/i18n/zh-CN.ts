@@ -100,7 +100,8 @@ export default {
     updateDatabase: '更新数据库',
     removeMigration: '移除最后的迁移',
     generateSqlScript: '生成 SQL 脚本',
-    dropDatabase: '删除数据库'
+    dropDatabase: '删除数据库',
+    dropDatabaseConfirm: '删除数据库是危险操作，确认继续吗？'
   },
   history: {
     title: '执行历史',
