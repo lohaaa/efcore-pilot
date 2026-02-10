@@ -83,6 +83,7 @@ export default {
     namespace: '命名空间',
     connection: '连接字符串',
     framework: '目标框架',
+    selectFramework: '请选择目标框架',
     configuration: '构建配置',
     configurationDefault: '默认（不指定）',
     runtime: '运行时',

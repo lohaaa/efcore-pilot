@@ -83,6 +83,7 @@ export default {
     namespace: 'Namespace',
     connection: 'Connection String',
     framework: 'Framework',
+    selectFramework: 'Select framework',
     configuration: 'Configuration',
     configurationDefault: 'Default (not specified)',
     runtime: 'Runtime',

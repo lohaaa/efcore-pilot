@@ -11,6 +11,13 @@
 - Naive UI
 - Pinia + Vue I18n
 
+## EF Core 版本兼容与建议
+
+- 命令兼容范围：`.NET 8+` 下的 EF Core CLI 迁移工作流（含 EF Core 8/9/10）。
+- 生产环境建议：优先选择 LTS 版本（当前可选 `.NET 8` 或 `.NET 10`）。
+- 版本匹配原则：`dotnet-ef` 与 `Microsoft.EntityFrameworkCore.*` 保持同主版本。
+- 多目标框架项目：执行命令时需明确目标框架（本工具会在检测到多目标时提供选择）。
+
 ## 当前开发范围（Phase 1）
 
 - 项目配置管理

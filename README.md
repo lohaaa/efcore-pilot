@@ -11,6 +11,13 @@ Cross-platform desktop tool for managing EF Core migration workflows across mult
 - Naive UI
 - Pinia + Vue I18n
 
+## EF Core Compatibility
+
+- Command support: EF Core CLI migration workflows on `.NET 8+` (including EF Core 8/9/10).
+- Production recommendation: prefer LTS releases (currently `.NET 8` or `.NET 10`).
+- Version alignment: keep `dotnet-ef` on the same major version as `Microsoft.EntityFrameworkCore.*`.
+- Multi-target projects: explicitly select a target framework when running commands (this app shows a selector when needed).
+
 ## Current Development Scope (Phase 1)
 
 - Project profiles management

@@ -72,6 +72,7 @@ const form = reactive({
   outputDir: '',
   connection: '',
   context: '',
+  framework: '',
   configuration: '',
   noBuild: false,
   verbose: false,
@@ -442,6 +443,49 @@ const selectedProjectInfo = computed<WorkspaceProjectInfo | null>(() => {
   )
 })
 
+const selectedStartupProjectInfo = computed<WorkspaceProjectInfo | null>(() => {
+  const profile = selectedProfile.value
+  if (!profile || !workspaceScanResult.value) {
+    return null
+  }
+
+  const expectedPath = normalizePath(profile.startupProjectPath)
+  if (!expectedPath) {
+    return null
+  }
+
+  return (
+    workspaceScanResult.value.projects.find((project) => normalizePath(project.path) === expectedPath) ?? null
+  )
+})
+
+function normalizeFrameworkValues(values: string[]) {
+  return Array.from(new Set(values.map((item) => item.trim()).filter(Boolean)))
+}
+
+const frameworkCandidates = computed(() => {
+  const migrationsFrameworks = normalizeFrameworkValues(selectedProjectInfo.value?.targetFrameworks ?? [])
+  const startupFrameworks = normalizeFrameworkValues(selectedStartupProjectInfo.value?.targetFrameworks ?? [])
+
+  if (migrationsFrameworks.length > 0 && startupFrameworks.length > 0) {
+    const startupSet = new Set(startupFrameworks)
+    const intersection = migrationsFrameworks.filter((item) => startupSet.has(item))
+    if (intersection.length > 0) {
+      return intersection
+    }
+
+    return startupFrameworks
+  }
+
+  return startupFrameworks.length > 0 ? startupFrameworks : migrationsFrameworks
+})
+
+const shouldShowFrameworkSelector = computed(() => frameworkCandidates.value.length > 1)
+
+const frameworkOptions = computed(() =>
+  frameworkCandidates.value.map((item) => ({ label: item, value: item }))
+)
+
 const migrationNameOptions = computed(() => toOptionList(selectedProjectInfo.value?.migrationNames ?? []))
 
 const dbContextOptions = computed(() => {
@@ -497,6 +541,19 @@ function alignContextValue() {
   }
 }
 
+function alignFrameworkValue() {
+  const candidates = frameworkCandidates.value
+
+  if (candidates.length <= 1) {
+    form.framework = ''
+    return
+  }
+
+  if (!form.framework.trim() || !candidates.includes(form.framework)) {
+    form.framework = candidates[0]
+  }
+}
+
 async function loadProjectMetadata() {
   const profile = selectedProfile.value
   if (!profile) {
@@ -508,6 +565,7 @@ async function loadProjectMetadata() {
   if (!scanPath) {
     workspaceScanResult.value = null
     alignContextValue()
+    alignFrameworkValue()
     return false
   }
 
@@ -522,6 +580,7 @@ async function loadProjectMetadata() {
   } finally {
     loadingMetadata.value = false
     alignContextValue()
+    alignFrameworkValue()
   }
 }
 
@@ -543,12 +602,14 @@ watch(
     form.connection = ''
     if (!profile) {
       form.context = ''
+      form.framework = ''
       form.output = ''
       form.outputDir = ''
       workspaceScanResult.value = null
       return
     }
     form.context = profile.dbContext
+    form.framework = ''
     syncSqlScriptOutputPathForProfile(profile.id)
     form.outputDir = profile.migrationsDirectory || ''
     void refreshProjectMetadata()
@@ -559,6 +620,14 @@ watch(
 watch(selectedProjectInfo, () => {
   alignContextValue()
 })
+
+watch(
+  frameworkCandidates,
+  () => {
+    alignFrameworkValue()
+  },
+  { immediate: true }
+)
 
 watch(commandType, (type) => {
   const profile = selectedProfile.value
@@ -628,6 +697,7 @@ function buildRequest(): EfCommandRequest | null {
     output: form.output.trim() || undefined,
     outputDir: form.outputDir.trim() || profile.migrationsDirectory || undefined,
     connection: useConnectionOverride.value ? form.connection.trim() || undefined : undefined,
+    framework: shouldShowFrameworkSelector.value ? form.framework.trim() || undefined : undefined,
     configuration: form.configuration.trim() || undefined,
     noBuild: form.noBuild,
     verbose: form.verbose,
@@ -639,6 +709,11 @@ function buildRequest(): EfCommandRequest | null {
 
   if (commandType.value === 'add-migration' && !request.migrationName) {
     message.warning(t('command.migrationName'))
+    return null
+  }
+
+  if (shouldShowFrameworkSelector.value && !request.framework) {
+    message.warning(t('command.selectFramework'))
     return null
   }
 
@@ -943,6 +1018,15 @@ async function doExecute() {
 
                 <n-form-item v-if="useConnectionOverride" :label="t('command.connection')">
                   <n-input v-model:value="form.connection" type="password" show-password-on="click" />
+                </n-form-item>
+
+                <n-form-item v-if="shouldShowFrameworkSelector" :label="t('command.framework')">
+                  <n-select
+                    v-model:value="form.framework"
+                    :options="frameworkOptions"
+                    :clearable="false"
+                    :placeholder="t('command.selectFramework')"
+                  />
                 </n-form-item>
 
                 <n-form-item :label="t('command.configuration')">
