@@ -8,6 +8,20 @@ use std::sync::{mpsc, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::Emitter;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+fn build_process_command(program: &str) -> Command {
+    let mut command = Command::new(program);
+    #[cfg(target_os = "windows")]
+    {
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -121,7 +135,7 @@ impl Drop for RunningProcessGuard {
 
 #[cfg(target_os = "windows")]
 fn terminate_process(pid: u32) -> Result<(), String> {
-    let output = Command::new("taskkill")
+    let output = build_process_command("taskkill")
         .args(["/PID", &pid.to_string(), "/T", "/F"])
         .output()
         .map_err(|error| format!("failed to run taskkill: {error}"))?;
@@ -142,7 +156,7 @@ fn terminate_process(pid: u32) -> Result<(), String> {
 
 #[cfg(not(target_os = "windows"))]
 fn terminate_process(pid: u32) -> Result<(), String> {
-    let output = Command::new("kill")
+    let output = build_process_command("kill")
         .args(["-TERM", &pid.to_string()])
         .output()
         .map_err(|error| format!("failed to run kill: {error}"))?;
@@ -221,7 +235,7 @@ fn non_empty_trimmed(value: &str, field_name: &str) -> Result<String, String> {
 }
 
 fn normalize_path(path: &Path) -> PathBuf {
-    fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
+    dunce::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
 fn path_to_string(path: &Path) -> String {
@@ -1034,7 +1048,7 @@ fn execute_ef_command_streaming(
     let command = build_preview(&args);
 
     let started = Instant::now();
-    let mut child = Command::new("dotnet")
+    let mut child = build_process_command("dotnet")
         .args(&args)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -1110,7 +1124,7 @@ fn execute_ef_command_streaming(
 }
 
 fn run_tool_check(program: &str, args: &[&str]) -> ToolCheck {
-    match Command::new(program).args(args).output() {
+    match build_process_command(program).args(args).output() {
         Ok(output) => {
             let success = output.status.success();
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -1167,11 +1181,13 @@ fn health_check() -> HealthStatus {
 }
 
 #[tauri::command]
-fn detect_environment() -> EnvironmentStatus {
-    EnvironmentStatus {
+async fn detect_environment() -> Result<EnvironmentStatus, String> {
+    tauri::async_runtime::spawn_blocking(|| EnvironmentStatus {
         dotnet: run_tool_check("dotnet", &["--version"]),
         dotnet_ef: run_tool_check("dotnet", &["ef", "--version"]),
-    }
+    })
+    .await
+    .map_err(|error| format!("failed to join environment check task: {error}"))
 }
 
 #[tauri::command]
