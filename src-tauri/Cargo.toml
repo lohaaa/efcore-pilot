@@ -3,6 +3,7 @@ name = "efcore-pilot"
 version = "0.1.0"
 description = "Cross-platform EF Core migration manager"
 authors = ["lohaaa"]
+license = "MIT"
 edition = "2021"
 
 [lib]
