@@ -42,3 +42,4 @@ pnpm tauri dev
 - Command execution is available in Tauri runtime.
 - Browser-only mode (`pnpm dev`) provides UI with mock command execution.
 - Data is stored locally in browser storage for now.
+- Due to hardware limitations, macOS is untested.

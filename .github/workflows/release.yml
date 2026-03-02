@@ -15,8 +15,11 @@ jobs:
       matrix:
         include:
           - platform: ubuntu-22.04
+            bundles: deb,rpm,appimage
           - platform: windows-latest
+            bundles: msi,nsis
           - platform: macos-latest
+            bundles: app,dmg
     runs-on: ${{ matrix.platform }}
 
     steps:
@@ -46,12 +49,23 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Generate Tauri icons
+        run: pnpm tauri icon ./icon.png
+
+      - name: Verify bundle icons
+        shell: pwsh
+        run: |
+          if (!(Test-Path "src-tauri/icons/icon.ico")) { throw "missing src-tauri/icons/icon.ico" }
+          if (!(Test-Path "src-tauri/icons/icon.icns")) { throw "missing src-tauri/icons/icon.icns" }
+          if (!(Test-Path "src-tauri/icons/icon.png")) { throw "missing src-tauri/icons/icon.png" }
+
       - name: Build and publish release bundles
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tauriScript: pnpm tauri
+          args: --bundles ${{ matrix.bundles }}
           tagName: ${{ github.ref_name }}
           releaseName: "EfCorePilot ${{ github.ref_name }}"
           releaseBody: "Automated build for ${{ github.ref_name }}."
